@@ -1,0 +1,42 @@
+name: Build & attach release assets
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write   # required to upload assets to the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchains
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential zip \
+            gcc-mingw-w64-x86-64 gcc-mingw-w64-i686
+
+      - name: Build (posix / win64 / win32)
+        run: |
+          make CC=gcc O=posix
+          make CC=x86_64-w64-mingw32-gcc O=win64
+          make CC=i686-w64-mingw32-gcc O=win32
+
+      - name: Package
+        run: |
+          set -eux
+          mkdir -p dist
+          TAG="${{ github.ref_name }}"
+
+          tar -czf "dist/espfixdep-${TAG}-linux.tar.gz"  -C posix espfixdep
+          zip -j   "dist/espfixdep-${TAG}-win64.zip"     win64/espfixdep.exe
+          zip -j   "dist/espfixdep-${TAG}-win32.zip"     win32/espfixdep.exe
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+
