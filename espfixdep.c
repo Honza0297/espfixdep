@@ -1,6 +1,8 @@
 #include <ctype.h>
 #include "utils.h"
 
+#define VERSION "0.0.1"
+
 #define DEPS_SIZE 1024 * 10
 struct depfile {
     char *data;
@@ -252,6 +254,11 @@ int main(int argc, char *argv[])
     char *dep_fn;
     char *src_fn;
     int rv;
+
+    if (argc == 2 && !strcmp(argv[1], "--version")) {
+        printf("%s\n", VERSION);
+        return 0;
+    }
 
     if (argc < 2) {
         fprintf(stderr, "usage: espfixdep <cmd> <arg...>\n");
