@@ -1,7 +1,7 @@
 #include <ctype.h>
 #include "utils.h"
 
-#define VERSION "0.0.1"
+#define VERSION "0.0.2"
 
 #define DEPS_SIZE 1024 * 10
 struct depfile {
