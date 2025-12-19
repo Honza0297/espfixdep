@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
 
 	// support --version, not only "more than 2 arguments"
 	if (argc == 2 && !strcmp(argv[1], "--version")) {
-		fprintf(stderr, "version: 0.1.0\n");
+		fprintf(stderr, "version: 0.2.0\n");
 		return 0;
 	}
 
