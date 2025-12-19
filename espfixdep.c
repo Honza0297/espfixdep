@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "utils.h"
 #include <ctype.h>
 
@@ -22,25 +27,30 @@ char* read_file(char* fn) {
 	long size;
 	char* buf;
 
-	fp = fopen(fn, "rb");
-	if (!fp)
+	fp = fopen_utf8(fn, "rb");
+	if (!fp) {
 		die_errno("open '%s'", fn);
+	}
 
-	if (fseek(fp, 0, SEEK_END))
+	if (fseek(fp, 0, SEEK_END)) {
 		die_errno("fseek '%s'", fn);
+	}
 
 	size = ftell(fp);
-	if (size == -1)
+	if (size == -1) {
 		die_errno("ftell '%s'", fn);
+	}
 
 	rewind(fp);
 
 	buf = malloc(size + 1);
-	if (!buf)
+	if (!buf) {
 		die_errno("malloc '%s'", fn);
+	}
 
-	if (fread(buf, 1, size, fp) != size)
+	if (fread(buf, 1, size, fp) != size) {
 		die("fread '%s'", fn);
+	}
 
 	buf[size] = '\0';
 
@@ -53,11 +63,13 @@ char* get_sdkconfig_dir(char* dep) {
 	char* c;
 
 	c = strrchr(dep, '/');
-	if (!c)
+	if (!c) {
 		return NULL;
+	}
 
-	if (strcmp(c, "/sdkconfig.h"))
+	if (strcmp(c, "/sdkconfig.h")) {
 		return NULL;
+	}
 
 	*c = '\0';
 
@@ -67,17 +79,20 @@ char* get_sdkconfig_dir(char* dep) {
 void depfile_add_dep(struct depfile* depfile, char* dep, char* fn) {
 	char* sdkconfig_dir;
 
-	if (!*dep)
+	if (!*dep) {
 		return;
+	}
 
 	sdkconfig_dir = get_sdkconfig_dir(dep);
-	if (sdkconfig_dir)
+	if (sdkconfig_dir) {
 		depfile->sdkconfig_dir = sdkconfig_dir;
-	else
+	} else {
 		depfile->deps[depfile->deps_cnt++] = dep;
+	}
 
-	if (depfile->deps_cnt == DEPS_SIZE)
+	if (depfile->deps_cnt == DEPS_SIZE) {
 		die("insufficient dependencies array size for '%s'", fn);
+	}
 }
 
 struct depfile* depfile_get(char* fn) {
@@ -91,8 +106,9 @@ struct depfile* depfile_get(char* fn) {
 
 	/* read target */
 	colon = strchr(depfile.data, ':');
-	if (!colon)
+	if (!colon) {
 		die("cannot find target in '%s'", fn);
+	}
 
 	*colon = '\0';
 	depfile.target = depfile.data;
@@ -129,15 +145,18 @@ void config_add_option(struct config* config, char* option, char* fn) {
 	int i;
 
 	for (i = 0; opts[i]; i++) {
-		if (!strcmp(opts[i], option))
+		if (!strcmp(opts[i], option)) {
 			break;
+		}
 	}
 
-	if (opts[i])
+	if (opts[i]) {
 		return;
+	}
 
-	if (i == OPTIONS_SIZE)
+	if (i == OPTIONS_SIZE) {
 		die("insufficient config option array size for '%s'", fn);
+	}
 
 	config->options[config->options_cnt++] = option;
 }
@@ -154,12 +173,14 @@ struct config* config_get(char* fn) {
 
 	while (1) {
 		c = strstr(c, prefix);
-		if (!c)
+		if (!c) {
 			break;
+		}
 
 		option = c + prefix_len;
-		while (*c && (isupper(*c) || isdigit(*c) || *c == '_'))
+		while (*c && (isupper(*c) || isdigit(*c) || *c == '_')) {
 			c++;
+		}
 
 		if (!*c) {
 			config_add_option(&config, option, fn);
@@ -177,8 +198,9 @@ void config_put(struct config* config) { free(config->data); }
 
 char* get_dep_fn(int argc, char* argv[]) {
 	do {
-		if (!strcmp(*argv, "-MF"))
+		if (!strcmp(*argv, "-MF")) {
 			return *++argv;
+		}
 
 	} while (*++argv);
 
@@ -194,16 +216,19 @@ void fix_dep_file(struct depfile* depfile, struct config* config, char* fn) {
 	FILE* fp;
 	int i;
 
-	fp = fopen(fn, "wb");
-	if (!fp)
+	fp = fopen_utf8(fn, "wb");
+	if (!fp) {
 		die_errno("open '%s'", fn);
+	}
 
-	if (fprintf(fp, "%s:", depfile->target) < 0)
+	if (fprintf(fp, "%s:", depfile->target) < 0) {
 		die_errno("fprintf '%s'", fn);
+	}
 
 	for (i = 0; i < depfile->deps_cnt; i++) {
-		if (fprintf(fp, " \\%s %s", EOL, depfile->deps[i]) < 0)
+		if (fprintf(fp, " \\%s %s", EOL, depfile->deps[i]) < 0) {
 			die_errno("fprintf '%s'", fn);
+		}
 	}
 
 	for (i = 0; i < config->options_cnt; i++) {
@@ -212,18 +237,22 @@ void fix_dep_file(struct depfile* depfile, struct config* config, char* fn) {
 
 		if (snprintf(dep_fn, MAX_DEP_FN_SIZE, "%s/%s.h",
 			     depfile->sdkconfig_dir,
-			     config->options[i]) >= MAX_DEP_FN_SIZE)
+			     config->options[i]) >= MAX_DEP_FN_SIZE) {
 			die("snprintf '%s'", fn);
+		}
 
-		if (!file_exists(dep_fn))
+		if (!file_exists(dep_fn)) {
 			continue;
+		}
 
-		if (fprintf(fp, " \\%s %s", EOL, dep_fn) < 0)
+		if (fprintf(fp, " \\%s %s", EOL, dep_fn) < 0) {
 			die_errno("fprintf '%s'", fn);
+		}
 	}
 
-	if (fprintf(fp, "%s", EOL) < 0)
+	if (fprintf(fp, "%s", EOL) < 0) {
 		die_errno("fprintf '%s'", fn);
+	}
 
 	fclose(fp);
 
@@ -237,25 +266,38 @@ int main(int argc, char* argv[]) {
 	char* src_fn;
 	int rv;
 
+	// support --version, not only "more than 2 arguments"
+	if (argc == 2 && !strcmp(argv[1], "--version")) {
+		fprintf(stderr, "version: 0.1.0\n");
+		return 0;
+	}
+
 	if (argc < 2) {
-		fprintf(stderr, "version: %s\n", VERSION);
 		fprintf(stderr, "usage: espfixdep <cmd> <arg...>\n");
 		return 1;
 	}
-
+	// run compiler command
 	rv = run_process(argv);
-	if (rv)
+	if (rv) {
 		die("run_process exited with error code: %d", rv);
+	}
 
+	// find if there is -MF flag
+	// Yes - proceed to analyze the dependency file
+	// No - exit, job done
 	dep_fn = get_dep_fn(argc, argv);
-	if (!dep_fn)
+	if (!dep_fn) {
 		return 0;
+	}
 
 	src_fn = get_src_fn(argc, argv);
-	if (!src_fn)
+	if (!src_fn) {
 		return 0;
+	}
 
 	depfile = depfile_get(dep_fn);
+	// If we don't find sdkconfig.h (and thus no sdkconfig_dir), just copy
+	// and exit, nothing to do
 	if (!depfile->sdkconfig_dir) {
 		depfile_put(depfile);
 		return 0;

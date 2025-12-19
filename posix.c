@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "utils.h"
 #include <sys/wait.h>
 #include <unistd.h>
@@ -9,24 +14,31 @@ int run_process(char* argv[]) {
 	int status;
 
 	pid = fork();
-	if (pid == -1)
+	if (pid == -1) {
 		die_errno("fork");
-
-	if (pid == 0) {
-		if (execvp(argv[1], &argv[1]) == -1)
-			die_errno("execvp: '%s'", argv[1]);
 	}
 
-	if (waitpid(pid, &status, 0) == -1)
+	if (pid == 0) {
+		if (execvp(argv[1], &argv[1]) == -1) {
+			die_errno("execvp: '%s'", argv[1]);
+		}
+	}
+
+	if (waitpid(pid, &status, 0) == -1) {
 		die_errno("waitpid: '%s'", argv[1]);
+	}
 
-	if (WIFEXITED(status))
+	if (WIFEXITED(status)) {
 		return WEXITSTATUS(status);
+	}
 
-	if (WIFSIGNALED(status))
+	if (WIFSIGNALED(status)) {
 		return WTERMSIG(status);
+	}
 
 	return 0;
 }
 
 int file_exists(char* fn) { return access(fn, F_OK) == 0; }
+
+FILE* fopen_utf8(const char* fn, const char* mode) { return fopen(fn, mode); }

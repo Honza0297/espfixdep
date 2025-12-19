@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
@@ -18,10 +23,11 @@ static inline void die_msg(char* file, int line, const char* func,
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
-	if (add_errno)
+	if (add_errno) {
 		fprintf(stderr, ": %s (%d)\n", strerror(errno), errno);
-	else
+	} else {
 		fprintf(stderr, "\n");
+	}
 
 	exit(EXIT_FAILURE);
 }
@@ -31,6 +37,7 @@ static inline void die_msg(char* file, int line, const char* func,
 
 int run_process(char* argv[]);
 int file_exists(char* fn);
+FILE* fopen_utf8(const char* fn, const char* mode);
 
 static inline void str_to_lower(char* s) {
 	while (*s) {
@@ -41,8 +48,9 @@ static inline void str_to_lower(char* s) {
 
 static inline void str_replace_chr(char* s, char from, char to) {
 	while (*s) {
-		if (*s == from)
+		if (*s == from) {
 			*s = to;
+		}
 		s++;
 	}
 }
