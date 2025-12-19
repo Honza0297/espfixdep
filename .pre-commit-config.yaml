@@ -5,4 +5,13 @@ repos:
       - id: clang-format
         args: [--style=file]
         files: \.(c|h)$
-
+  - repo: https://github.com/espressif/check-copyright/
+    rev: v1.1.1
+    hooks:
+      - id: check-copyright
+        args: ['--config', '.check_copyright.yaml']
+  - repo: https://github.com/espressif/conventional-precommit-linter
+    rev: v1.10.0
+    hooks:
+      - id: conventional-precommit-linter
+        stages: [commit-msg]
